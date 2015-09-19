@@ -1,0 +1,191 @@
+---
+title: "Assignment 1 for Coursera Reproducible" 
+output: html_document
+---
+# Loading Data
+
+``` {r}
+
+activity <- read.csv("activity.csv")
+str(activity)
+
+```
+
+
+```{r}
+
+activity$date <- as.Date(activity$date)
+str(activity)
+
+```
+
+Count Missing NAs
+
+
+```{r}
+
+sum(is.na(activity$steps))
+
+```
+
+## Total Steps Per Day?
+
+Need to subset the data to create clean set.
+
+```{r}
+
+activity_new<-activity[which(!is.na(activity$steps)),]
+
+```
+
+
+```{r}
+
+average <-tapply(activity_new$steps, activity_new$date, sum)
+
+```
+
+## Create a Histogram
+
+Create a simple histogram using base plotting method.
+
+```{r}
+
+hist(average,10, main = "Aggregate Steps Per Day", xlab = "")
+
+```
+
+### Calculate Mean and Median
+
+```{r}
+mean(average)
+```
+
+```{r}
+median(average)
+```
+
+
+## What is the average daily activity pattern?
+
+```{r}
+
+daily <- tapply(activity_new$steps, activity_new$interval, mean)
+plot(y = daily, x = names(daily), type = "l", xlab = "5-Minute-Intervals", 
+    main = "Daily Activity Pattern", ylab = "Average Steps")
+
+```
+
+
+Find the highest interval:
+
+```{r}
+
+
+daily[daily==max(daily)]
+
+```
+
+
+# Inputing missing values
+
+Count NAs and Fill NAs with medians of intervals. 
+
+```{r}
+sum(is.na(activity))
+```
+
+### Fill! 
+
+```{r}
+
+activity_new <- activity
+activity_new[which(is.na(activity_new$steps)),1]<-
+        daily[as.character(activity_new[which(is.na(activity_new$steps)),3])]
+
+```
+
+Check for mistakes:
+
+```{r}
+
+sum(is.na(activity_new))
+
+```
+
+
+## Create Histogram
+
+```{r, fig.height=10, fig.width=10}
+
+
+perday_new <- tapply(activity_new$steps, activity_new$date, sum)
+```
+
+
+
+
+``` {r}
+par(mfrow=c(1,2))
+hist(perday_new,10, main = "Total number of steps taken per day", xlab = "Steps"
+     , ylim =c(0, 25))
+abline(v = median(perday_new), col = 4, lwd = 4)
+hist(perday_new,10, main = "Total number of steps taken per day  
+     (missing values replaced with mean of interval)", xlab = "Steps",
+     ylim =c(0, 25))
+abline(v = median(perday_new), col = 4, lwd = 4)
+
+```
+
+
+### We now calculate the median and the mean of the filled in dataset
+
+```{r}
+mean(perday_new)
+```
+
+```{r}
+
+median(perday_new)
+```
+
+The differences is minimal for the two different data sets:
+
+*Mean*
+Unfilled: 10766
+Filled: 10766
+
+*Median*
+Unfilled:10766
+filled: 10766
+
+# Are there differences in activity patterns between weekdays and weekends?
+
+Filter between the weekend and weekday:
+
+```{r, fig.height=20, fig.width=20}
+
+activity_new$wd<-weekdays(activity_new$date)
+activity_new$fwd<- as.factor(c("weekend", "weekday"))
+activity_new[activity_new$wd == "Sunday" | activity_new$wd == "Saturday" ,5]<- factor("weekend")
+activity_new[!(activity_new$wd == "Sunday" | activity_new$wd == "Saturday"),5 ]<- factor("weekday")
+
+```
+
+
+```{r, fig.height=20, fig.width=20}
+
+activity_new_we <- subset(activity_new, fwd == "weekend") 
+activity_new_wd <- subset(activity_new, fwd == "weekday") 
+dailyactivity_we <- tapply(activity_new_we$steps, activity_new_we$interval, mean)
+dailyactivity_wd <- tapply(activity_new_wd$steps, activity_new_wd$interval, mean)
+par(mfrow=c(2,1))
+plot(y = dailyactivity_wd, x = names(dailyactivity_wd), type = "l", xlab = "5-Minute Interval", 
+     main = "Daily Activity Pattern on Weekdays", ylab = "Average number of steps", 
+     ylim =c(0, 250))
+plot(y = dailyactivity_we, x = names(dailyactivity_we), type = "l", xlab = "5-Minute Interval", 
+     main = "Daily Activity Pattern on Weekends", ylab = "Average number of steps", 
+     ylim =c(0, 250))
+```
+
+The differences between weekday and week show that on the weekend, the activity is more sustained. This is different than the week, where there is a definite period of minimal activity. 
